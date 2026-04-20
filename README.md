@@ -196,11 +196,6 @@ Referans proje ve PCB şemaları:
 ##  📂 Dizin Yapısı
 
 ```bash
-# Gerekli kütüphaneyi kurun
-pip install pyserial
-
-# Dinleme betiğini başlatın (COM portunu kendi bilgisayarınıza göre düzenleyin)
-python 3_PC_Python_Script/ses_alici.py
 
 📂 Dizin Yapısı
 
