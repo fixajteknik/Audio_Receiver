@@ -34,6 +34,26 @@ Bir INMP441 MEMS mikrofon, bir ESP32 S3 ve bir LoRa E22 modülü ile gerçek zam
   Adresli gönderim → Karşı Alıcı
 ```
 
+> [!NOTE]
+> Bu standart bir bilgi notudur. Kullanıcıların bilmesi gereken ekstra detayları buraya yazabilirsiniz.
+
+> ℹ️ **Not:** Bu proje henüz geliştirme aşamasındadır.
+
+> 💡 **Bilgi:** Sistemi çalıştırmadan önce bağımlılıkları yüklediğinizden emin olun.
+
+> [!TIP]
+> Bu bir ipucudur. İşleri kolaylaştıracak tavsiyeler vermek için idealdir. (Yeşil renkli görünür)
+
+> [!IMPORTANT]
+> Bu önemli bir bilgidir. Kullanıcıların kesinlikle okuması gereken kritik adımlar için kullanın. (Mor renkli görünür)
+
+> [!WARNING]
+> Bu bir uyarıdır. Hata alınabilecek veya dikkat edilmesi gereken noktaları belirtir. (Sarı renkli görünür)
+
+> [!CAUTION]
+> Bu kritik bir uyarıdır. Veri kaybı veya güvenlik gibi çok hassas konularda kullanılır. (Kırmızı renkli görünür)
+
+
 ---
 
 ## 🎥 Proje Tanıtım Videosu
