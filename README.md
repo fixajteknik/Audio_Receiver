@@ -68,3 +68,20 @@ pip install pyserial
 
 # Dinleme betiğini başlatın (COM portunu kendi bilgisayarınıza göre düzenleyin)
 python 3_PC_Python_Script/ses_alici.py
+
+📂 Dizin Yapısı
+
+📦 OLBS_RF_Audio_Project
+ ┣ 📂 1_TX_Sender_Node
+ ┃ ┣ 📜 TX_Audio_Sender.ino  # I2S DMA Kayıt ve RF Fragmentation
+ ┃ ┗ 📜 gizli.h              # LoRa Pin ve Adres Tanımlamaları
+ ┣ 📂 2_RX_Receiver_Node
+ ┃ ┣ 📜 RX_Audio_Receiver.ino # RF Reassembly, PLR Hesabı ve Timeout Yönetimi
+ ┃ ┗ 📜 gizli.h
+ ┣ 📂 3_PC_Python_Script
+ ┃ ┗ 📜 ses_alici.py         # Seri Port okuma ve PCM to WAV dönüşümü
+ ┗ 📜 README.md
+ 
+ 
+ 👨‍💻 Geliştirici
+Mehmet Yıldız | Embedded Systems Architect
