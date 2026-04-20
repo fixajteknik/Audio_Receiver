@@ -197,9 +197,7 @@ Referans proje ve PCB şemaları:
 
 ```bash
 
-📂 Dizin Yapısı
-
-📦 OLBS_RF_Audio_Project
+📦 Audio_Receiver
  ┣ 📂 1_TX_Sender_Node
  ┃ ┣ 📜 TX_Audio_Sender.ino  # I2S DMA Kayıt ve RF Fragmentation
  ┃ ┗ 📜 gizli.h              # LoRa Pin ve Adres Tanımlamaları
