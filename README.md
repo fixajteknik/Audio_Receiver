@@ -169,10 +169,8 @@ Referans proje ve PCB şemaları:
 ## 🛠️ Kurulum
 
 ```bash
-# PlatformIO
-pio pkg install --library "fixajteknik/LoRa_E22"
 
-# veya Arduino IDE → Library Manager
+# Arduino IDE → Library Manager
 # "LoRa_E22" ara ve yükle
 ```
 
@@ -189,9 +187,9 @@ pio pkg install --library "fixajteknik/LoRa_E22"
 
 ## 📋 Gereksinimler
 
-- **Donanım:** ESP32 S3 N16R8, INMP441 MEMS mikrofon, LoRa E22-900T22D
+- **Donanım:** ESP32 S3 N16R8 PCB by Fixaj, INMP441 MEMS mikrofon, LoRa E22-900T22D
 - **Framework:** Arduino + ESP-IDF (PlatformIO veya Arduino IDE)
-- **Kütüphane:** `LoRa_E22` — [Fixaj Teknik](https://github.com/fixajteknik)
+- **Kütüphane:** `LoRa_E22` — [xreef](https://github.com/xreef/EByte_LoRa_E22_Series_Library)
 
 ---
 
