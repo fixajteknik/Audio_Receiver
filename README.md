@@ -207,10 +207,13 @@ Referans proje ve PCB şemaları:
  ┃ ┗ 📜 ses_alici.py         # Seri Port okuma ve PCM to WAV dönüşümü
  ┗ 📜 README.md
  
+ ```
  
  👨‍💻 Geliştirici
+ 
 Mehmet Yıldız | Embedded Systems Architect
-```
+
+https://fixaj.com/
 ---
 
 ## 📄 Lisans
