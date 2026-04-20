@@ -1,4 +1,4 @@
-# 📻 End-to-End RF Audio Streaming System (ESP32 & LoRa E22)
+# 📻 End-to-End RF Audio Streaming System (ESP32 S3 & LoRa E22)
 
 ![ESP32](https://img.shields.io/badge/ESP32-S3-blue?style=flat&logo=espressif)
 ![LoRa](https://img.shields.io/badge/LoRa-E22--900T22D-orange?style=flat)
@@ -9,36 +9,136 @@ Bu proje, bir INMP441 MEMS mikrofon üzerinden alınan **16kHz, 16-bit** ham PCM
 
 Sistem; eşzamanlı donanım yönetimi, veri parçalama (fragmentation), paket kayıp oranı (PLR) hesaplaması ve asenkron zaman aşımı (non-blocking timeout) gibi ileri seviye mühendislik konseptlerini barındırır.
 
----
+# 📡 ESP32 S3 I2S Audio over LoRa
 
-## 🛠️ Sistem Mimarisi ve Mühendislik Kararları (Trade-offs)
+> **32ms'lik kristal net ses — DMA ile kaydedilir, LoRa E22 ile iletilir.**
 
-Gerçek zamanlı (real-time) 256 kbps veri akışı gerektiren bir sesi, doğası gereği düşük bant genişliğine sahip LoRa üzerinden iletmek fiziksel bir darboğazdır (bottleneck). Bu darboğazı aşmak için sistem **"Half-Duplex Walkie-Talkie"** mimarisiyle tasarlanmış ve aşağıdaki mühendislik çözümleri uygulanmıştır:
-
-### 1. I2S DMA ve Donanımsal Veri Kırpma (Hardware Bit-Shifting)
-CPU'yu I/O işlemleriyle yormamak için Arduino'nun standart `analogRead()` fonksiyonları yerine **ESP-IDF I2S DMA** sürücüleri kullanılmıştır. INMP441 fiziksel olarak 32-bit veri üretir, ancak RF bant genişliğini korumak için donanımsal `slot_bit_width` ayarlarıyla veri doğrudan donanım seviyesinde 16-bit'e (MSB tutulup LSB atılarak) sıkıştırılmış ve RAM'e kopyalanmıştır.
-
-### 2. Fragmentation (Parçalama) ve FIFO Optimizasyonu
-32ms'lik tek bir ses çerçevesi (Frame) 512 örnekten, yani **1024 Byte**'tan oluşur. LoRa E22 modülünün donanımsal UART FIFO sınırı **240 Byte**'tır. 
-Tampon taşmalarını (Overflow) önlemek için;
-* **19 Byte** başlık (Header: Çerçeve No, Paket No, ID, Şifre)
-* **210 Byte** ses yükü (Payload)
-olmak üzere özel bir `#pragma pack(1)` Struct tasarlandı. Böylece 1024 Byte'lık dev blok, donanımı boğmadan **5 RF Paketine** bölünerek havaya basılır.
-
-### 3. Reassembly ve Dinamik Offset Mantığı
-Alıcı (RX) modül, paketlerin havadan hangi sırayla geldiğini önemsemez. Gelen paketin başlığındaki `paket_no` bilgisi okunarak, 1024 byte'lık RAM tamponundaki tam konumu `(paket_no * 210)` formülüyle hesaplanır ve veri `memcpy` ile doğrudan ilgili adrese kopyalanır.
-
-### 4. Sequence Tracking (Sıra Takibi) ve Otonom PLR Hesabı
-Paket kayıplarını (Packet Loss) ölçmek için geleneksel zamanlayıcılar (Timer) yerine **Sıra Takibi** kullanılmıştır. Alıcı, havadan yeni bir `cerceve_no` yakaladığında, önceki çerçevenin kapandığını anlar, eksik paketleri sayar ve **Packet Loss Ratio (PLR)** değerini anında % olarak hesaplayıp raporlar.
-
-### 5. Asenkron Zaman Aşımı (Non-Blocking Timeout)
-Sistemde paket veya çerçeve kayıplarının (Drop) yazılımı kilitlemesini (Deadlock) engellemek için `millis()` tabanlı 5 saniyelik asenkron bir Watchdog / Timeout mekanizması kurulmuştur. Süre dolduğunda sistem beklemeyi bırakır, kurtarabildiği (N/A içermeyen) verileri raporlar ve yeni çerçeveyi dinlemeye geçer.
+Bir INMP441 MEMS mikrofon, bir ESP32 S3 ve bir LoRa E22 modülü ile gerçek zamanlı ses verisi kablosuz aktarımı. Sıfır CPU yükü, sıfır gecikme tasarımı.
 
 ---
 
-## 🚀 Kurulum ve Çalıştırma
+## 🏗️ Mimari Genel Bakış
 
-### 1. Donanım Bağlantıları (ESP32-S3 İçin)
+```
+[INMP441 Mikrofon]
+      │  I2S (Philips Std)
+      ▼
+[ESP32 S3 — I2S DMA Donanımı]
+  32-bit fiziksel hat → 16-bit DMA dönüşümü (donanımsal, CPU yok)
+      │  512 örnek × 16-bit = 1024 byte
+      ▼
+[pcm_buffer — SRAM]
+      │  Paketlere bölünür (5 × 210 byte)
+      ▼
+[LoRa E22-900T22D]
+  Adresli gönderim → Karşı Alıcı
+```
+
+---
+
+## 🎙️ Ses Kayıt Tasarımı
+
+### Neden `driver/i2s_std.h`?
+
+Arduino'nun standart `ESP_I2S.h` kütüphanesi yerine **Espressif'in doğrudan sürücüsü** tercih edildi.  
+Bu sayede DMA descriptor sayısı, frame boyutu ve donanım dönüşümleri doğrudan kontrol edilebiliyor.
+
+### 32-bit → 16-bit Donanımsal Dönüşüm
+
+INMP441, sesi **24-bit çözünürlükte** üretir. I2S protokolü bu veriyi **32-bitlik slot** içinde taşır.  
+`int24_t` diye bir C tipi olmadığından ve LoRa bandını verimli kullanmak gerektiğinden, donanım katmanında MSB kesme yöntemi kullanıldı:
+
+```cpp
+// DMA'ya: "Bana 16-bit ver"
+.slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, ...)
+
+// Donanıma: "Fiziksel hattı 32-bit dinle"
+std_cfg.slot_cfg.slot_bit_width = I2S_SLOT_BIT_WIDTH_32BIT;
+```
+
+**Sonuç:** ESP32 S3 DMA birimi, gelen 32-bit veriyi alır → alt 16 biti atar → sesin karakterini taşıyan üst 16 biti (MSB) doğrudan RAM'e yazar. CPU hiç dahil olmaz.
+
+### Çerçeve Boyutu: 32ms
+
+```
+16.000 Hz × 0.032 s = 512 örnek (tam sayı, kesir yok)
+512 × 2 byte = 1024 byte / çerçeve
+```
+
+---
+
+## ⚙️ DMA & Durum Makinesi
+
+### Neden DMA?
+
+- İşlemci hiç yorulmaz — kayıt arka planda gerçekleşir
+- Buffer dolduğunda donanım otomatik olarak callback tetikler
+- Callback içinde yalnızca **flag güncellenir** (WDT güvenli)
+- Asıl işlem ana döngüde yapılır → çökme riski sıfıra yakın
+
+### State Machine
+
+```
+STATE_IDLE
+    │  i2s_channel_read() başlatılır
+    ▼
+STATE_RECORDING
+    │  DMA arka planda 1024 byte doldurur
+    │  [ISR] on_recv_done() → flag
+    ▼
+STATE_FRAME_READY
+    │  I2S kanalı kapatılır
+    ▼
+STATE_PROCESSING
+    │  Paketleme + LoRa gönderimi
+    ▼
+STATE_ERROR  (overflow veya donanım hatası)
+```
+
+`switch/case` yapısı Assembly katmanında **sıfır performans kaybıyla** durum geçişi yapar.
+
+---
+
+## 📦 LoRa Paket Yapısı
+
+1024 byte ses verisi **5 pakete** bölünerek gönderilir:
+
+```c
+#pragma pack(push, 1)
+struct AudioPacket {
+    uint32_t cerceve_no;              // 4 byte  — senkronizasyon
+    uint16_t kaynak_id;               // 2 byte  — cihaz kimliği
+    uint8_t  veri_uzunlugu;           // 1 byte  — gerçek veri boyutu
+    uint8_t  paket_no;                // 1 byte  — sıra numarası
+    uint8_t  toplam_paket;            // 1 byte  — toplam paket sayısı
+    char     sifre[10];               // 10 byte — erişim denetimi
+    int16_t  ses_verisi[105];         // 210 byte — PCM verisi
+};  // TOPLAM: 229 byte
+#pragma pack(pop)
+```
+
+`#pragma pack(push, 1)` ile struct hizalaması garantilendi — platform bağımsız doğru boyut.
+
+---
+
+## 📡 LoRa E22 Dinamik Yapılandırma
+
+> Bu kütüphane ve PCB tasarımı **[Fixaj Teknik](https://github.com/fixajteknik/YouTube_Tutorials)** tarafından geliştirilmiştir.
+
+Standart LoRa modülleri parametre ayarları için harici bir programlayıcı gerektirir.  
+Bu tasarımda modül **yazılım üzerinden dinamik olarak yapılandırılır**:
+
+- ✅ Ekstra programlayıcı donanım gerekmez
+- ✅ Modül değiştirildiğinde sistem kendini yeniden ayarlar
+- ✅ Adres, frekans ve şifre bilgisi donanıma gömülü değil, kodda yönetilir
+- ✅ Saha kullanıcısı için sıfır konfigürasyon yükü
+
+Referans proje ve PCB şemaları:  
+🔗 [Video 108 — #define Part 2 / RSSİ li E22-900T22](https://github.com/fixajteknik/YouTube_Tutorials/tree/main/Video%20108%20%23define%20Part%202/RSS%C4%B0%20li%20e22900t22)
+
+---
+
+## 🔌 Donanım Bağlantıları (ESP32-S3 İçin)
 > **Not:** Klasik ESP32'de Input-Only pinlerine (34-39) WS/SCK bağlanamaz. S3 için en güvenli pinler 1, 2 ve 3'tür.
 
 | INMP441 Mikrofon | ESP32-S3 (TX) Pin | Açıklama |
@@ -54,22 +154,40 @@ Sistemde paket veya çerçeve kayıplarının (Drop) yazılımı kilitlemesini (
 | M0 / M1 | GPIO 4 / GPIO 6 |
 | TX / RX | GPIO 17 / GPIO 18 |
 
-### 2. Yazılımın Yüklenmesi
-1. `gizli.h` dosyasındaki `Adres`, `Kanal` ve `GonderilecekAdres` parametrelerini cihazlarınıza göre ayarlayın.
-2. `1_TX_Sender_Node` kodunu Gönderici cihaza yükleyin.
-3. `2_RX_Receiver_Node` kodunu Alıcı cihaza yükleyin.
+---
 
-### 3. PC Üzerinden Ses Verisinin Dinlenmesi (.WAV)
-Alıcı cihaz bilgisayara bağlandığında Arduino IDE Seri Monitörünü **kapatın**. Ardından Python scriptini çalıştırarak gelen ham PCM verisini `.wav` dosyasına dönüştürün:
+
+
+## 🛠️ Kurulum
 
 ```bash
-# Gerekli kütüphaneyi kurun
-pip install pyserial
+# PlatformIO
+pio pkg install --library "fixajteknik/LoRa_E22"
 
-# Dinleme betiğini başlatın (COM portunu kendi bilgisayarınıza göre düzenleyin)
-python 3_PC_Python_Script/ses_alici.py
+# veya Arduino IDE → Library Manager
+# "LoRa_E22" ara ve yükle
+```
 
-📂 Dizin Yapısı
+`gizli.h` dosyasında kendi adres ve kanal bilgilerinizi girin:
+
+```cpp
+#define Adres            1    // Bu cihazın adresi
+#define GonderilecekAdres 2   // Hedef cihaz adresi
+#define Kanal            20   // Ortak frekans kanalı
+#define Netid            63   // Ortak ağ kimliği
+```
+
+---
+
+## 📋 Gereksinimler
+
+- **Donanım:** ESP32 S3 N16R8, INMP441 MEMS mikrofon, LoRa E22-900T22D
+- **Framework:** Arduino + ESP-IDF (PlatformIO veya Arduino IDE)
+- **Kütüphane:** `LoRa_E22` — [Fixaj Teknik](https://github.com/fixajteknik)
+
+---
+
+##  📂 Dizin Yapısı
 
 📦 OLBS_RF_Audio_Project
  ┣ 📂 1_TX_Sender_Node
@@ -85,3 +203,9 @@ python 3_PC_Python_Script/ses_alici.py
  
  👨‍💻 Geliştirici
 Mehmet Yıldız | Embedded Systems Architect
+
+---
+
+## 📄 Lisans
+
+Bu proje MIT lisansı ile dağıtılmaktadır.
