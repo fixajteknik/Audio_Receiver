@@ -211,8 +211,7 @@ python 3_PC_Python_Script/ses_alici.py
  ┃ ┣ 📜 TX_Audio_Sender.ino  # I2S DMA Kayıt ve RF Fragmentation
  ┃ ┗ 📜 gizli.h              # LoRa Pin ve Adres Tanımlamaları
  ┣ 📂 2_RX_Receiver_Node
- ┃ ┣ 📜 RX_Audio_Receiver.ino # RF Reassembly, PLR Hesabı ve Timeout Yönetimi
- ┃ ┗ 📜 gizli.h
+ ┃ ┗📜 RX_Audio_Receiver.ino # RF Reassembly, PLR Hesabı ve Timeout Yönetimi
  ┣ 📂 3_PC_Python_Script
  ┃ ┗ 📜 ses_alici.py         # Seri Port okuma ve PCM to WAV dönüşümü
  ┗ 📜 README.md
