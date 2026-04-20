@@ -212,8 +212,7 @@ Referans proje ve PCB şemaları:
  👨‍💻 Geliştirici
  
 Mehmet Yıldız | Embedded Systems Architect
-
-https://fixaj.com/
+[FIXAJ.com](https://fixaj.com/) 
 ---
 
 ## 📄 Lisans
