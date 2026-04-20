@@ -36,6 +36,14 @@ Bir INMP441 MEMS mikrofon, bir ESP32 S3 ve bir LoRa E22 modülü ile gerçek zam
 
 ---
 
+## 🎥 Proje Tanıtım Videosu
+
+[![ESP32 I2S LoRa Audio](https://img.youtube.com/vi/YlLklpSxGew/maxresdefault.jpg)](https://www.youtube.com/watch?v=YlLklpSxGew)
+
+> 🎬 Videoyu izlemek için görsele tıklayın
+
+---
+
 ## 🎙️ Ses Kayıt Tasarımı
 
 ### Neden `driver/i2s_std.h`?
