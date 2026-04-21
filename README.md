@@ -1,3 +1,5 @@
+![Devre Şeması](resimler/devre.png)
+
 # 📻 End-to-End RF Audio Streaming System (ESP32 S3 & LoRa E22)
 
 ![ESP32](https://img.shields.io/badge/ESP32-S3-blue?style=flat&logo=espressif)
