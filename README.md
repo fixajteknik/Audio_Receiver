@@ -173,7 +173,7 @@ Referans proje ve PCB şemaları:
 
 INMP441 üzerinden alınan 512 örnekten (sample) oluşan 16-bit ham ses verisi tamponu (buffer) aşağıda listelenmiştir. 
 
-![INMP441 I2S Ham Ses Verisi (PCM)](resimler/wav.png)
+![INMP441 I2S Ham Ses Verisi (PCM)](resimler/vaw.png)
 
 <details>
 <summary><b>Ham Ses Verisini (Buffer) Görmek İçin Tıklayın</b></summary>
