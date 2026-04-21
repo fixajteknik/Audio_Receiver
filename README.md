@@ -158,9 +158,9 @@ Referans proje ve PCB şemaları:
 | :--- | :--- | :--- |
 | VDD / GND | 3.3V / GND | Güç Beslemesi |
 | L/R | GND | Sol Kanal Seçimi |
-| WS | GPIO 1 | Word Select (LRCK) |
+| WS | GPIO 48 | Word Select (LRCK) |
 | SCK | GPIO 2 | Serial Clock (BCLK) |
-| SD | GPIO 3 | Serial Data (DIN) |
+| SD | GPIO 38 | Serial Data (DIN) |
 
 | LoRa E22 Modülü | ESP32-S3 (TX/RX) Pin |
 | :--- | :--- |
