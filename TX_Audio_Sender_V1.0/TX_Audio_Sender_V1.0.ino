@@ -22,9 +22,9 @@
 ** CONSTANTS & MACROS
 ========================================================================================================*/
 // --- I2S PIN YAPILANDIRMASI (ESP32-S3 GUVENLI PINLERI) ---
-#define I2S_WS 1   // Word Select (LRCK)
+#define I2S_WS 48   // Word Select (LRCK)
 #define I2S_SCK 2  // Serial Clock (BCLK)
-#define I2S_SD 3   // Serial Data (DIN)
+#define I2S_SD 38   // Serial Data (DIN)
 
 // --- SES KAYIT PARAMETRELERI ---
 #define SAMPLE_RATE 16000                                         // 16 kHz Ornekleme hizi
