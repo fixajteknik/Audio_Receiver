@@ -5,9 +5,9 @@
 #include "driver/i2s_std.h"
 
 // --- I2S PIN YAPILANDIRMASI (ESP32-S3 GUVENLI PINLERI) ---
-#define I2S_WS 1   
+#define I2S_WS 48   
 #define I2S_SCK 2  
-#define I2S_SD 3   
+#define I2S_SD 38   
 
 // --- SES KAYIT PARAMETRELERI ---
 #define SAMPLE_RATE 16000                                  
